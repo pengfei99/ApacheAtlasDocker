@@ -1,4 +1,3 @@
-FROM scratch
 FROM ubuntu:20.04
 ARG VERSION=2.1.0
 
