@@ -11,7 +11,7 @@ Basic usage
 1. Pull the latest release image:
 
 ```bash
-docker pull sburn/apache-atlas
+docker pull 
 ```
 
 2. Start Apache Atlas in a container exposing Web-UI port 21000:
