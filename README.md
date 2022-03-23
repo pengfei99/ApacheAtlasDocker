@@ -104,6 +104,18 @@ docker run --detach \
     /opt/apache-atlas-2.1.0/bin/atlas_start.py
 ```
 
+You can combine the above config togethor
+
+```bash
+docker run --detach \
+    -v ${PWD}/atlas-logs:/opt/apache-atlas-2.1.0/logs \
+    -v ${PWD}/data:/opt/apache-atlas-2.1.0/data \
+    -p 21000:21000 \
+    --name atlas \
+    sburn/apache-atlas \
+    /opt/apache-atlas-2.1.0/bin/atlas_start.py
+```
+
 Tinkerpop Gremlin support
 -------------------------
 
