@@ -1,5 +1,17 @@
 FROM ubuntu:20.04
-ARG VERSION=2.1.0
+LABEL maintainer="pengfei.liu@casd.eu"
+
+ARG VERSION=2.3.0
+
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+ENV MAVEN_OPTS="-Xms2g -Xmx4g"
+ENV JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
+
+RUN mkdir -p /tmp/atlas-src \
+    && mkdir -p /apache-atlas \
+
+COPY resource/pom.xml.patch /tmp/atlas-src/
 
 RUN apt-get update \
     && apt-get -y upgrade \
@@ -7,50 +19,53 @@ RUN apt-get update \
     && apt-get -y install \
         maven \
         wget \
-        git \
         python \
         openjdk-8-jdk-headless \
         patch \
 	    unzip \
     && cd /tmp \
-    && wget http://mirror.linux-ia64.org/apache/atlas/${VERSION}/apache-atlas-${VERSION}-sources.tar.gz \
-    && mkdir -p /opt/gremlin \
-    && mkdir -p /tmp/atlas-src \
+    && wget https://dlcdn.apache.org/atlas/${VERSION}/apache-atlas-${VERSION}-sources.tar.gz \
     && tar --strip 1 -xzvf apache-atlas-${VERSION}-sources.tar.gz -C /tmp/atlas-src \
     && rm apache-atlas-${VERSION}-sources.tar.gz \
     && cd /tmp/atlas-src \
-    && export MAVEN_OPTS="-Xms2g -Xmx2g" \
-    && export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
-    && mvn clean -Dmaven.repo.local=/tmp/.mvn-repo -Dhttps.protocols=TLSv1.2 -DskipTests package -Pdist, embedded-cassandra-solr \
-    && tar -xzvf /tmp/atlas-src/distro/target/apache-atlas-${VERSION}-server.tar.gz -C /opt \
+    && sed -i 's/http:\/\/repo1.maven.org\/maven2/https:\/\/repo1.maven.org\/maven2/g' pom.xml \
+    && patch -b -f < pom.xml.patch \
+    && mvn clean \
+           -Dmaven.repo.local=/tmp/atlas-src/.mvn-repo \
+           -Dhttps.protocols=TLSv1.2 \
+           -DskipTests \
+           -Drat.skip=true \
+            package -Pdist,embedded-hbase-solr \
+    && tar --strip 1 -xzvf /tmp/atlas-src/distro/target/apache-atlas-${VERSION}-server.tar.gz -C /apache-atlas \
     && rm -Rf /tmp/atlas-src \
-    && rm -Rf /tmp/.mvn-repo \
+    && rm -Rf /root/.npm \
     && apt-get -y --purge remove \
         maven \
-        git \
-    && apt-get -y remove openjdk-11-jre-headless \
+        unzip \
     && apt-get -y autoremove \
     && apt-get -y clean
 
-RUN ln -s apache-atlas-${VERSION}/ apache-atlas
-COPY resource/atlas_start.py.patch /opt/apache-atlas/bin/
-COPY resource/atlas_config.py.patch /opt/apache-atlas/bin/
-RUN cd /opt/apache-atlas/bin \
-    && patch -b -f < atlas_start.py.patch \
+COPY resource/hbase/hbase-site.xml.template /apache-atlas/conf/hbase/hbase-site.xml.template
+COPY resource/atlas_start.py.patch /apache-atlas/bin/
+COPY resource/atlas_config.py.patch /apache-atlas/bin/
+COPY resource/atlas-env.sh /apache-atlas/conf/atlas-env.sh
+
+WORKDIR /apache-atlas/bin
+RUN patch -b -f < atlas_start.py.patch \
     && patch -b -f < atlas_config.py.patch
 
-COPY resource/atlas-env.sh /opt/apache-atlas/conf/atlas-env.sh
-COPY resource/hbase/hbase-site.xml.template /opt/apache-atlas/conf/hbase/hbase-site.xml.template
-COPY resource/gremlin /opt/gremlin/
-# COPY conf/keycloak.json /opt/apache-atlas/conf/keycloak.json
+WORKDIR /apache-atlas/conf
+RUN sed -i 's/\${atlas.log.dir}/\/apache-atlas\/logs/g' atlas-log4j.xml \
+    && sed -i 's/\${atlas.log.file}/application.log/g' atlas-log4j.xml
 
 
-RUN cd /opt/apache-atlas \
-    && ./bin/atlas_start.py -setup || true
-
-RUN cd /opt/apache-atlas \
-    && ./bin/atlas_start.py & \
-    touch /opt/apache-atlas-${VERSION}/logs/application.log \
-    && tail -f /opt/apache-atlas-${VERSION}/logs/application.log | sed '/AtlasAuthenticationFilter.init(filterConfig=null)/ q' \
+WORKDIR /apache-atlas/bin
+RUN ./atlas_start.py -setup || true
+RUN ./atlas_start.py & \
+    touch /apache-atlas/logs/application.log \
+    && tail -f /apache-atlas/logs/application.log | sed '/Defaulting to local host name/ q' \
     && sleep 10 \
-    && /opt/apache-atlas/bin/atlas_stop.py
+    && ./atlas_stop.py \
+    && truncate -s0 /apache-atlas/logs/application.log
+
+CMD ["/bin/bash", "-c", "/apache-atlas/bin/atlas_start.py; tail -fF /apache-atlas/logs/application.log"]
