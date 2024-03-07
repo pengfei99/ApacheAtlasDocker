@@ -2,14 +2,13 @@ FROM ubuntu:20.04
 LABEL maintainer="pengfei.liu@casd.eu"
 
 ARG VERSION=2.3.0
-
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
-ENV MAVEN_OPTS="-Xms2g -Xmx4g"
+ENV MAVEN_OPTS="-Xms2g -Xmx2g"
 ENV JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 
 RUN mkdir -p /tmp/atlas-src \
-    && mkdir -p /apache-atlas \
+    && mkdir -p /apache-atlas
 
 COPY resource/pom.xml.patch /tmp/atlas-src/
 
@@ -35,8 +34,9 @@ RUN apt-get update \
            -Dhttps.protocols=TLSv1.2 \
            -DskipTests \
            -Drat.skip=true \
-            package -Pdist,embedded-hbase-solr \
-    && tar --strip 1 -xzvf /tmp/atlas-src/distro/target/apache-atlas-${VERSION}-server.tar.gz -C /apache-atlas \
+            package -Pdist,embedded-hbase-solr
+
+RUN tar --strip 1 -xzvf /tmp/atlas-src/distro/target/apache-atlas-${VERSION}-server.tar.gz -C /apache-atlas \
     && rm -Rf /tmp/atlas-src \
     && rm -Rf /root/.npm \
     && apt-get -y --purge remove \
