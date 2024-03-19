@@ -119,58 +119,24 @@ docker run --detach \
     /opt/apache-atlas-2.1.0/bin/atlas_start.py
 ```
 
-Tinkerpop Gremlin support
--------------------------
-
-Image contains build-in extras for those who want to play with Janusgraph, and Atlas artifacts using Apache Tinkerpop Gremlin Console (gremlin CLI).
-
-1. You need Atlas container up and running as shown above.
-
-2. Install `gremlin-server` and `gremlin-console` into the container by running included automation script:
-```bash
-docker exec -ti atlas /opt/gremlin/install-gremlin.sh
-```
-3. Start `gremlin-server` in the same container:
-```bash
-docker exec -d atlas /opt/gremlin/start-gremlin-server.sh
-```
-4. Finally, run `gremlin-console` interactively:
-```bash
-docker exec -ti atlas /opt/gremlin/run-gremlin-console.sh
-```
-Gremlin-console usage example:
-```bash
-         \,,,/
-         (o o)
------oOOo-(3)-oOOo-----
-
-gremlin>:remote connect tinkerpop.server conf/remote.yaml session
-==>Configured localhost/127.0.0.1:8182-[d1b2d9de-da1f-471f-be14-34d8ea769ae8]
-gremlin> :remote console
-==>All scripts will now be sent to Gremlin Server - [localhost/127.0.0.1:8182]-[d1b2d9de-da1f-471f-be14-34d8ea769ae8] - type ':remote console' to return to local mode
-gremlin> g = graph.traversal()
-==>graphtraversalsource[standardjanusgraph[hbase:[localhost]], standard]
-gremlin> g.V().has('__typeName','hdfs_path').count()
-```
 
 Environment Variables
 ---------------------
 
 The following environment variables are available for configuration:
 
-| Name | Default | Description |
-|------|---------|-------------|
-| JAVA_HOME | /usr/lib/jvm/java-8-openjdk-amd64 | The java implementation to use. If JAVA_HOME is not found we expect java and jar to be in path
-| ATLAS_OPTS | <none> | any additional java opts you want to set. This will apply to both client and server operations
-| ATLAS_CLIENT_OPTS | <none> | any additional java opts that you want to set for client only
-| ATLAS_CLIENT_HEAP | <none> | java heap size we want to set for the client. Default is 1024MB
-| ATLAS_SERVER_OPTS | <none> |  any additional opts you want to set for atlas service.
-| ATLAS_SERVER_HEAP | <none> | java heap size we want to set for the atlas server. Default is 1024MB
-| ATLAS_HOME_DIR | <none> | What is is considered as atlas home dir. Default is the base location of the installed software
-| ATLAS_LOG_DIR | <none> | Where log files are stored. Defatult is logs directory under the base install location
-| ATLAS_PID_DIR | <none> | Where pid files are stored. Defatult is logs directory under the base install location
-| ATLAS_EXPANDED_WEBAPP_DIR | <none> | Where do you want to expand the war file. By Default it is in /server/webapp dir under the base install dir.
-
+| Name                      | Default                           | Description                                                                                                  |
+|---------------------------|-----------------------------------|--------------------------------------------------------------------------------------------------------------|
+| JAVA_HOME                 | /usr/lib/jvm/java-8-openjdk-amd64 | The java implementation to use. If JAVA_HOME is not found we expect java and jar to be in path               |
+| ATLAS_OPTS                | <none>                            | any additional java opts you want to set. This will apply to both client and server operations               |
+| ATLAS_CLIENT_OPTS         | <none>                            | any additional java opts that you want to set for client only                                                |
+| ATLAS_CLIENT_HEAP         | <none>                            | java heap size we want to set for the client. Default is 1024MB                                              |
+| ATLAS_SERVER_OPTS         | <none>                            | any additional opts you want to set for atlas service.                                                       |
+| ATLAS_SERVER_HEAP         | <none>                            | java heap size we want to set for the atlas server. Default is 1024MB                                        |
+| ATLAS_HOME_DIR            | <none>                            | What is is considered as atlas home dir. Default is the base location of the installed software              |
+| ATLAS_LOG_DIR             | <none>                            | Where log files are stored. Defatult is logs directory under the base install location                       |
+| ATLAS_PID_DIR             | <none>                            | Where pid files are stored. Defatult is logs directory under the base install location                       |
+| ATLAS_EXPANDED_WEBAPP_DIR | <none>                            | Where do you want to expand the war file. By Default it is in /server/webapp dir under the base install dir. |
 
 Bug Tracker
 -----------
